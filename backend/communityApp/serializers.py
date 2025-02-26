@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import CustomUser
+from .models import CustomUser ,Profile
+from .models import  Community
 
 
 class LoginSerializer(serializers.Serializer):
@@ -27,3 +28,43 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         password = validated_data.get('password')
         user = CustomUser.objects.create_user(username=username, email=email, password=password)
         return user
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(format='hex_verbose')
+    community_created=serializers.SerializerMethodField()
+   
+    class Meta:
+        model = Profile
+        fields = '__all__'
+        read_only_fields=['id','name','date_joined','user','community_created']
+
+    def get_community_created(self, obj):
+        return Community.objects.filter(owner=obj).count() 
+ 
+
+class CreateCommunitySerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField()
+    members = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Community
+        fields = '__all__'
+        read_only_fields=['id','created_at','owner','members','name']
+
+    def get_owner(self, obj):
+        return obj.owner.name if obj.owner else "Unknown"
+       
+    def get_members(self, obj):
+        return [member.name for member in obj.members.all()] 
+   
+
+    
+class JoinCommunitySerializer(serializers.ModelSerializer):
+   
+    class Meta:
+        model = Community
+        fields ='__all__'
+    
+
+   
